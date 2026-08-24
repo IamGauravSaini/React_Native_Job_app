@@ -6,12 +6,11 @@ import { useRouter } from 'expo-router';
 export default function Login() {
     const router = useRouter();
     const [passwordVisible, setPasswordVisible] = useState(false);
-    const [repeatPasswordVisible, setRepeatPasswordVisible] = useState(false);
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <KeyboardAvoidingView 
-                style={{ flex: 1 }} 
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             >
                 <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
@@ -28,11 +27,11 @@ export default function Login() {
 
                     {/* Titles */}
                     <View style={styles.titleContainer}>
-                        <Text style={styles.mainTitle}>Sign up to find a job</Text>
+                        <Text style={styles.mainTitle}>Log in to your account</Text>
                         <View style={styles.subtitleRow}>
-                            <Text style={styles.subtitleText}>Already have an account? </Text>
-                            <TouchableOpacity>
-                                <Text style={styles.loginLink}>Log in</Text>
+                            <Text style={styles.subtitleText}>Don't have an account? </Text>
+                            <TouchableOpacity onPress={() => router.push('/auth/signup')}>
+                                <Text style={styles.loginLink}>Sign up</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -53,7 +52,7 @@ export default function Login() {
                     {/* Inputs */}
                     <View style={styles.inputContainer}>
                         <Text style={styles.label}>Email</Text>
-                        <TextInput 
+                        <TextInput
                             style={styles.input}
                             keyboardType="email-address"
                             autoCapitalize="none"
@@ -63,7 +62,7 @@ export default function Login() {
                     <View style={styles.inputContainer}>
                         <Text style={styles.label}>Password</Text>
                         <View style={styles.passwordInputContainer}>
-                            <TextInput 
+                            <TextInput
                                 style={styles.passwordInput}
                                 secureTextEntry={!passwordVisible}
                             />
@@ -73,30 +72,13 @@ export default function Login() {
                         </View>
                     </View>
 
-                    <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Repeat password</Text>
-                        <View style={styles.passwordInputContainer}>
-                            <TextInput 
-                                style={styles.passwordInput}
-                                secureTextEntry={!repeatPasswordVisible}
-                            />
-                            <TouchableOpacity onPress={() => setRepeatPasswordVisible(!repeatPasswordVisible)} style={styles.eyeIcon}>
-                                <Ionicons name={repeatPasswordVisible ? "eye-outline" : "eye-off-outline"} size={20} color="#9CA3AF" />
-                            </TouchableOpacity>
-                        </View>
-                    </View>
+                    <TouchableOpacity style={{ alignSelf: 'flex-end', marginTop: 8, marginBottom: 24 }} onPress={() => router.push('/auth/forgotPassword')}>
+                        <Text style={{ color: '#00A82D', fontSize: 14, fontWeight: '500' }}>Forgot password?</Text>
+                    </TouchableOpacity>
 
-                    {/* Terms */}
-                    <Text style={styles.termsText}>
-                        By signing up, you confirm that you agree to{' '}
-                        <Text style={styles.termsLink}>Terms & Conditions</Text>
-                        {' '}and{' '}
-                        <Text style={styles.termsLink}>Privacy Policy</Text>
-                    </Text>
-
-                    {/* Sign Up Button */}
-                    <TouchableOpacity style={styles.signupButton} onPress={() => router.push('/auth/signup')}>
-                        <Text style={styles.signupButtonText}>Sign up</Text>
+                    {/* Log In Button */}
+                    <TouchableOpacity style={styles.signupButton} onPress={() => console.log('Login pressed')}>
+                        <Text style={styles.signupButtonText}>Log in</Text>
                     </TouchableOpacity>
                 </ScrollView>
             </KeyboardAvoidingView>
