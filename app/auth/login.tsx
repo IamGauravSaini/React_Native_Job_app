@@ -1,4 +1,5 @@
-import { Image, StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform } from "react-native";
+import BrandLogo from '../../components/BrandLogo';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform } from "react-native";
 import { useState } from "react";
 import { Ionicons, AntDesign } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -16,10 +17,7 @@ export default function Login() {
                 <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
                     {/* Header */}
                     <View style={styles.header}>
-                        <Image
-                            source={require("../../assets/images/Frame.svg")}
-                            style={styles.logo}
-                        />
+                        <BrandLogo style={styles.logo} />
                         <TouchableOpacity>
                             <Text style={styles.businessLink}>Sign up your business</Text>
                         </TouchableOpacity>
@@ -105,9 +103,8 @@ const styles = StyleSheet.create({
         marginBottom: 40,
     },
     logo: {
-        width: 80,
+        width: 142,
         height: 50,
-        objectFit: 'contain',
     },
     businessLink: {
         color: '#00A82D',

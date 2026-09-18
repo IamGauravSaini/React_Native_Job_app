@@ -1,3 +1,4 @@
+import BrandLogo from '../../components/BrandLogo';
 import React, { useState, useRef } from 'react';
 import { Image, StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, Alert } from "react-native";
 import { Ionicons, AntDesign, Feather } from '@expo/vector-icons';
@@ -161,7 +162,7 @@ export default function SignupFlow() {
                             </TouchableOpacity>
                         )}
                     </View>
-                    <Image source={require("../../assets/images/Frame.svg")} style={styles.logo} />
+                    <BrandLogo style={styles.logo} />
                     <View style={styles.headerRight}>
                         {(step === 5 || step === 6) && (
                             <TouchableOpacity onPress={handleSkip}>
@@ -406,7 +407,7 @@ const styles = StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 10 },
     headerLeft: { width: 50 },
-    logo: { width: 60, height: 40, resizeMode: 'contain' },
+    logo: { width: 142, height: 40 },
     headerRight: { width: 50, alignItems: 'flex-end' },
     skipText: { color: 'black', fontSize: 16 },
     progressBarContainer: { flexDirection: 'row', paddingHorizontal: 40, justifyContent: 'center', marginBottom: 20 },

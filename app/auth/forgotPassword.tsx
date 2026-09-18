@@ -1,5 +1,6 @@
+import BrandLogo from '../../components/BrandLogo';
 import React, { useState, useRef } from 'react';
-import { Image, StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, Alert } from "react-native";
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, Alert } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
@@ -52,7 +53,7 @@ export default function ForgotPassword() {
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             >
                 <View style={styles.header}>
-                    <Image source={require("../../assets/images/Frame.svg")} style={styles.logo} />
+                    <BrandLogo style={styles.logo} />
                 </View>
 
                 <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
@@ -189,9 +190,8 @@ const styles = StyleSheet.create({
         paddingBottom: 20 
     },
     logo: { 
-        width: 80, 
-        height: 50, 
-        resizeMode: 'contain' 
+        width: 142,
+        height: 50,
     },
     scrollContainer: { 
         paddingHorizontal: 24, 
