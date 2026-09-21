@@ -13,7 +13,7 @@ export default function ForgotPassword() {
     
     // Step 1: OTP
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
-    const otpRefs = useRef<Array<TextInput | null>>([]);
+    const otpRefs = useRef<(TextInput | null)[]>([]);
     
     // Step 2: New Password
     const [newPassword, setNewPassword] = useState('');
@@ -89,13 +89,13 @@ export default function ForgotPassword() {
                     {step === 1 && (
                         <View style={styles.stepContainer}>
                             <Text style={styles.title}>Enter confirmation code</Text>
-                            <Text style={styles.subtitle}>Please enter the code we've sent to {email || 'youremail@hotmail.com'}</Text>
+                            <Text style={styles.subtitle}>{"Please enter the code we've sent to "}{email || 'youremail@hotmail.com'}</Text>
                             
                             <View style={styles.otpContainer}>
                                 {otp.map((digit, index) => (
                                     <TextInput
                                         key={index}
-                                        ref={(el) => (otpRefs.current[index] = el)}
+                                        ref={(el) => { otpRefs.current[index] = el; }}
                                         style={[styles.otpInput, { borderColor: digit ? '#00A82D' : '#D1D5DB' }]}
                                         keyboardType="number-pad"
                                         maxLength={1}

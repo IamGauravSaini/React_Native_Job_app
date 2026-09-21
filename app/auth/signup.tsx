@@ -1,7 +1,7 @@
 import BrandLogo from '../../components/BrandLogo';
-import React, { useState, useRef } from 'react';
-import { Image, StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, Alert } from "react-native";
-import { Ionicons, AntDesign, Feather } from '@expo/vector-icons';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, Easing, Image, StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, Alert } from "react-native";
+import { Ionicons, Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -24,7 +24,12 @@ export default function SignupFlow() {
     const [step, setStep] = useState(0);
 
     // Form states
+    const [email, setEmail] = useState('');
     const [emailOTP, setEmailOTP] = useState(['', '', '', '', '', '']);
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [zipCode, setZipCode] = useState('');
@@ -36,8 +41,25 @@ export default function SignupFlow() {
     const [resumeFile, setResumeFile] = useState<{name: string, uri: string} | null>(null);
 
     // Refs for OTP inputs
-    const emailOTPRefs = useRef<Array<TextInput | null>>([]);
-    const phoneOTPRefs = useRef<Array<TextInput | null>>([]);
+    const emailOTPRefs = useRef<(TextInput | null)[]>([]);
+    const phoneOTPRefs = useRef<(TextInput | null)[]>([]);
+    const successAnimation = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        if (step !== 9) return;
+
+        const timer = setTimeout(() => {
+            setStep(10);
+            Animated.timing(successAnimation, {
+                toValue: 1,
+                duration: 750,
+                easing: Easing.out(Easing.back(1.4)),
+                useNativeDriver: true,
+            }).start();
+        }, 2000);
+
+        return () => clearTimeout(timer);
+    }, [step, successAnimation]);
 
     const handleEmailOTPChange = (text: string, index: number) => {
         const newOTP = [...emailOTP];
@@ -66,42 +88,68 @@ export default function SignupFlow() {
         return false;
     };
 
+    const validateEmail = (emailStr: string) => {
+        const reg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return reg.test(emailStr);
+    };
+
     const handleNext = async () => {
         if (step === 0) {
-            const isValid = await verifyOTP(emailOTP);
-            if (isValid) setStep(1);
-        } else if (step === 1) {
-            if (!firstName || !lastName) {
-                Alert.alert("Error", "Please enter first and last name");
+            const normalizedEmail = email.trim();
+
+            if (!validateEmail(normalizedEmail)) {
+                Alert.alert("Error", "Please enter a valid email address");
                 return;
             }
-            setStep(2);
+            setEmail(normalizedEmail);
+            setStep(1);
+        } else if (step === 1) {
+            const isValid = await verifyOTP(emailOTP);
+            if (isValid) setStep(2);
         } else if (step === 2) {
-            if (!zipCode) {
-                Alert.alert("Error", "Please enter your ZIP code");
+            if (password.length < 8) {
+                Alert.alert("Weak password", "Password must be at least 8 characters long.");
+                return;
+            }
+            if (password !== confirmPassword) {
+                Alert.alert("Passwords do not match", "Please enter the same password in both fields.");
                 return;
             }
             setStep(3);
         } else if (step === 3) {
-            if (!phoneNumber) {
-                Alert.alert("Error", "Please enter your phone number");
+            if (!firstName || !lastName) {
+                Alert.alert("Error", "Please enter first and last name");
                 return;
             }
             setStep(4);
         } else if (step === 4) {
-            const isValid = await verifyOTP(phoneOTP);
-            if (isValid) setStep(5);
+            if (!zipCode) {
+                Alert.alert("Error", "Please enter your ZIP code");
+                return;
+            }
+            setStep(5);
         } else if (step === 5) {
+            if (!phoneNumber) {
+                Alert.alert("Error", "Please enter your phone number");
+                return;
+            }
             setStep(6);
+        } else if (step === 6) {
+            const isValid = await verifyOTP(phoneOTP);
+            if (isValid) setStep(7);
+        } else if (step === 7) {
+            setStep(8);
         }
     };
 
+    const handleSubmitProfile = () => {
+        successAnimation.setValue(0);
+        setStep(9);
+    };
+
     const handleSkip = () => {
-        if (step === 5) setStep(6);
-        else if (step === 6) {
-            Alert.alert("Success", "Signup Complete!");
-            router.replace('/auth/login');
-        }
+        if (step === 7) setStep(8);
+        else if (step === 8) handleSubmitProfile();
     };
 
     const pickImage = async () => {
@@ -127,18 +175,19 @@ export default function SignupFlow() {
     };
 
     const renderProgressBar = () => {
-        if (step === 0) return null;
+        if (step <= 1 || step >= 9) return null;
         
         let activeStep = 1;
-        if (step === 1) activeStep = 1;
-        if (step === 2) activeStep = 2;
-        if (step >= 3 && step <= 4) activeStep = 3;
-        if (step === 5) activeStep = 4;
-        if (step === 6) activeStep = 5;
+        if (step === 2) activeStep = 1;
+        if (step === 3) activeStep = 2;
+        if (step === 4) activeStep = 3;
+        if (step >= 5 && step <= 6) activeStep = 4;
+        if (step === 7) activeStep = 5;
+        if (step === 8) activeStep = 6;
 
         return (
             <View style={styles.progressBarContainer}>
-                {[1, 2, 3, 4, 5].map((s) => (
+                {[1, 2, 3, 4, 5, 6].map((s) => (
                     <View 
                         key={s} 
                         style={[
@@ -154,39 +203,71 @@ export default function SignupFlow() {
     return (
         <SafeAreaView style={styles.safeArea}>
             <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-                <View style={styles.header}>
-                    <View style={styles.headerLeft}>
-                        {step > 0 && (
-                            <TouchableOpacity onPress={() => setStep(step - 1)}>
-                                <Ionicons name="arrow-back" size={24} color="black" />
-                            </TouchableOpacity>
-                        )}
+                {step < 9 && (
+                    <View style={styles.header}>
+                        <View style={styles.headerLeft}>
+                            {step > 0 && (
+                                <TouchableOpacity onPress={() => setStep(step - 1)}>
+                                    <Ionicons name="arrow-back" size={24} color="black" />
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                        <BrandLogo style={styles.logo} />
+                        <View style={styles.headerRight}>
+                            {(step === 7 || step === 8) && (
+                                <TouchableOpacity onPress={handleSkip}>
+                                    <Text style={styles.skipText}>Skip</Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
                     </View>
-                    <BrandLogo style={styles.logo} />
-                    <View style={styles.headerRight}>
-                        {(step === 5 || step === 6) && (
-                            <TouchableOpacity onPress={handleSkip}>
-                                <Text style={styles.skipText}>Skip</Text>
-                            </TouchableOpacity>
-                        )}
-                    </View>
-                </View>
+                )}
 
                 {renderProgressBar()}
 
                 <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-                    
-                    {/* STEP 0: Email OTP */}
+
+                    {/* STEP 0: Email Input */}
                     {step === 0 && (
                         <View style={styles.stepContainer}>
+                            <Text style={styles.title}>{"What's your email?"}</Text>
+                            <Text style={styles.subtitle}>Enter your email address to get started with your account setup.</Text>
+
+                            <View style={styles.inputContainer}>
+                                <Text style={styles.label}>Email Address</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={email}
+                                    onChangeText={setEmail}
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                    autoComplete="email"
+                                    textContentType="emailAddress"
+                                    returnKeyType="send"
+                                    onSubmitEditing={handleNext}
+                                    placeholder="youremail@example.com"
+                                    placeholderTextColor="rgba(0, 0, 0, 0.4)"
+                                />
+                            </View>
+
+                            <TouchableOpacity style={styles.bottomNextBtn} onPress={handleNext}>
+                                <Text style={styles.signupButtonText}>Send OTP Code</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+
+                    {/* STEP 1: Email OTP */}
+                    {step === 1 && (
+                        <View style={styles.stepContainer}>
                             <Text style={styles.title}>Confirm your email</Text>
-                            <Text style={styles.subtitle}>Please enter the code we've sent to youremail@hotmail.com</Text>
+                            <Text style={styles.subtitle}>{"Please enter the code we've sent to "}{email}</Text>
                             
                             <View style={styles.otpContainer}>
                                 {emailOTP.map((digit, index) => (
                                     <TextInput
                                         key={index}
-                                        ref={(el) => (emailOTPRefs.current[index] = el)}
+                                        ref={(el) => { emailOTPRefs.current[index] = el; }}
                                         style={styles.otpInput}
                                         keyboardType="number-pad"
                                         maxLength={1}
@@ -199,17 +280,69 @@ export default function SignupFlow() {
                             <TouchableOpacity>
                                 <Text style={styles.resendText}>Send code again</Text>
                             </TouchableOpacity>
+                            <TouchableOpacity style={{marginTop: 15}} onPress={() => setStep(0)}>
+                                <Text style={[styles.resendText, {fontWeight: 'normal'}]}>Use a different email address</Text>
+                            </TouchableOpacity>
                             <TouchableOpacity style={styles.bottomNextBtn} onPress={handleNext}>
                                 <Text style={styles.signupButtonText}>Verify Email</Text>
                             </TouchableOpacity>
                         </View>
                     )}
 
-                    {/* STEP 1: Name */}
-                    {step === 1 && (
+                    {/* STEP 2: Password */}
+                    {step === 2 && (
                         <View style={styles.stepContainer}>
-                            <Text style={styles.stepIndicator}>STEP 1/5</Text>
-                            <Text style={styles.title}>Welcome to ShiftQuest! Let's take a few steps to complete your profile.</Text>
+                            <Text style={styles.stepIndicator}>STEP 1/6</Text>
+                            <Text style={styles.title}>Create a password</Text>
+                            <Text style={styles.subtitle}>Use at least 8 characters to keep your account secure.</Text>
+
+                            <View style={styles.inputContainer}>
+                                <Text style={styles.label}>Password</Text>
+                                <View style={styles.passwordContainer}>
+                                    <TextInput
+                                        style={styles.passwordInput}
+                                        value={password}
+                                        onChangeText={setPassword}
+                                        secureTextEntry={!showPassword}
+                                        autoCapitalize="none"
+                                        autoComplete="new-password"
+                                        textContentType="newPassword"
+                                        placeholder="Enter your password"
+                                    />
+                                    <TouchableOpacity onPress={() => setShowPassword((visible) => !visible)} style={styles.passwordToggle}>
+                                        <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={22} color="#6B7280" />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+
+                            <View style={styles.inputContainer}>
+                                <Text style={styles.label}>Confirm password</Text>
+                                <View style={styles.passwordContainer}>
+                                    <TextInput
+                                        style={styles.passwordInput}
+                                        value={confirmPassword}
+                                        onChangeText={setConfirmPassword}
+                                        secureTextEntry={!showConfirmPassword}
+                                        autoCapitalize="none"
+                                        autoComplete="new-password"
+                                        textContentType="newPassword"
+                                        returnKeyType="next"
+                                        onSubmitEditing={handleNext}
+                                        placeholder="Enter your password again"
+                                    />
+                                    <TouchableOpacity onPress={() => setShowConfirmPassword((visible) => !visible)} style={styles.passwordToggle}>
+                                        <Ionicons name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} size={22} color="#6B7280" />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </View>
+                    )}
+
+                    {/* STEP 3: Name */}
+                    {step === 3 && (
+                        <View style={styles.stepContainer}>
+                            <Text style={styles.stepIndicator}>STEP 2/6</Text>
+                            <Text style={styles.title}>{"Welcome to ShiftQuest! Let's take a few steps to complete your profile."}</Text>
                             <Text style={styles.subtitle}>First, please enter your name</Text>
                             
                             <View style={styles.inputContainer}>
@@ -223,10 +356,10 @@ export default function SignupFlow() {
                         </View>
                     )}
 
-                    {/* STEP 2: Location */}
-                    {step === 2 && (
+                    {/* STEP 4: Location */}
+                    {step === 4 && (
                         <View style={styles.stepContainer}>
-                            <Text style={styles.stepIndicator}>STEP 2/5</Text>
+                            <Text style={styles.stepIndicator}>STEP 3/6</Text>
                             <Text style={styles.title}>Enter your location</Text>
                             <Text style={styles.subtitle}>We will display the most relevant jobs based on your location</Text>
                             
@@ -237,10 +370,10 @@ export default function SignupFlow() {
                         </View>
                     )}
 
-                    {/* STEP 3: Phone Number */}
-                    {step === 3 && (
+                    {/* STEP 5: Phone Number */}
+                    {step === 5 && (
                         <View style={styles.stepContainer}>
-                            <Text style={styles.stepIndicator}>STEP 3/5</Text>
+                            <Text style={styles.stepIndicator}>STEP 4/6</Text>
                             <Text style={styles.title}>Enter your phone number</Text>
                             <Text style={styles.subtitle}>Phone number will help protect your account as well as let employers contact you much easier</Text>
                             
@@ -277,18 +410,18 @@ export default function SignupFlow() {
                         </View>
                     )}
 
-                    {/* STEP 4: Phone OTP */}
-                    {step === 4 && (
+                    {/* STEP 6: Phone OTP */}
+                    {step === 6 && (
                         <View style={styles.stepContainer}>
-                            <Text style={styles.stepIndicator}>STEP 3/5</Text>
+                            <Text style={styles.stepIndicator}>STEP 4/6</Text>
                             <Text style={styles.title}>Confirm your phone number</Text>
-                            <Text style={styles.subtitle}>Please enter the code we've sent to {countryCode} {phoneNumber}</Text>
+                            <Text style={styles.subtitle}>{"Please enter the code we've sent to "}{countryCode} {phoneNumber}</Text>
                             
                             <View style={styles.otpContainer}>
                                 {phoneOTP.map((digit, index) => (
                                     <TextInput
                                         key={index}
-                                        ref={(el) => (phoneOTPRefs.current[index] = el)}
+                                        ref={(el) => { phoneOTPRefs.current[index] = el; }}
                                         style={styles.otpInput}
                                         keyboardType="number-pad"
                                         maxLength={1}
@@ -301,16 +434,16 @@ export default function SignupFlow() {
                             <TouchableOpacity>
                                 <Text style={styles.resendText}>Send code again</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={{marginTop: 20}}>
+                            <TouchableOpacity style={{marginTop: 20}} onPress={() => setStep(5)}>
                                 <Text style={[styles.resendText, {fontWeight: 'normal'}]}>Enter a different phone number</Text>
                             </TouchableOpacity>
                         </View>
                     )}
 
-                    {/* STEP 5: Profile Image */}
-                    {step === 5 && (
+                    {/* STEP 7: Profile Image */}
+                    {step === 7 && (
                         <View style={styles.stepContainer}>
-                            <Text style={styles.stepIndicator}>STEP 4/5</Text>
+                            <Text style={styles.stepIndicator}>STEP 5/6</Text>
                             <Text style={styles.title}>Upload a profile picture</Text>
                             
                             <View style={styles.imageUploadContainer}>
@@ -337,10 +470,10 @@ export default function SignupFlow() {
                         </View>
                     )}
 
-                    {/* STEP 6: Resume */}
-                    {step === 6 && (
+                    {/* STEP 8: Resume */}
+                    {step === 8 && (
                         <View style={styles.stepContainer}>
-                            <Text style={styles.stepIndicator}>STEP 5/5</Text>
+                            <Text style={styles.stepIndicator}>STEP 6/6</Text>
                             <Text style={styles.title}>Upload your resume</Text>
                             
                             <TouchableOpacity style={[styles.resumeUploadBox, resumeFile && styles.resumeUploadBoxActive]} onPress={pickDocument}>
@@ -379,21 +512,73 @@ export default function SignupFlow() {
                         </View>
                     )}
 
+                    {/* STEP 9: Creating Profile */}
+                    {step === 9 && (
+                        <View style={styles.completionContainer}>
+                            <View style={styles.loadingIconContainer}>
+                                <ActivityIndicator size="large" color="#00A82D" />
+                            </View>
+                            <Text style={styles.title}>Creating your profile</Text>
+                            <Text style={styles.subtitle}>Please wait while we finish setting up your account...</Text>
+                        </View>
+                    )}
+
+                    {/* STEP 10: Success */}
+                    {step === 10 && (
+                        <View style={styles.completionContainer}>
+                            <Animated.View
+                                style={[
+                                    styles.successHalo,
+                                    {
+                                        opacity: successAnimation,
+                                        transform: [{ scale: successAnimation }],
+                                    },
+                                ]}
+                            >
+                                <View style={styles.successCircle}>
+                                    <Ionicons name="checkmark" size={62} color="#FFFFFF" />
+                                </View>
+                            </Animated.View>
+
+                            <Animated.View
+                                style={[
+                                    styles.successContent,
+                                    {
+                                        opacity: successAnimation,
+                                        transform: [{
+                                            translateY: successAnimation.interpolate({
+                                                inputRange: [0, 1],
+                                                outputRange: [24, 0],
+                                            }),
+                                        }],
+                                    },
+                                ]}
+                            >
+                                <Text style={styles.successTitle}>Your profile is ready!</Text>
+                                <Text style={styles.successSubtitle}>Your account has been created successfully. You can now log in and start exploring opportunities.</Text>
+                                <TouchableOpacity style={styles.loginButton} onPress={() => router.replace('/auth/login')}>
+                                    <Text style={styles.signupButtonText}>Continue to Login</Text>
+                                    <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+                                </TouchableOpacity>
+                            </Animated.View>
+                        </View>
+                    )}
+
                 </ScrollView>
 
                 {/* Bottom Action Button */}
-                {step > 0 && (
+                {step > 1 && step < 9 && (
                     <View style={styles.bottomBar}>
                         <TouchableOpacity 
                             style={[
                                 styles.nextButton, 
-                                (step === 6 && !resumeFile) ? styles.nextButtonDisabled : {}
+                                (step === 8 && !resumeFile) ? styles.nextButtonDisabled : {}
                             ]} 
-                            onPress={step === 6 ? handleSkip : handleNext}
-                            disabled={step === 6 && !resumeFile}
+                            onPress={step === 8 ? handleSubmitProfile : handleNext}
+                            disabled={step === 8 && !resumeFile}
                         >
                             <Text style={styles.signupButtonText}>
-                                {step === 6 ? "Save & Finish" : "Next"}
+                                {step === 8 ? "Create Profile" : "Next"}
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -424,6 +609,9 @@ const styles = StyleSheet.create({
     inputContainer: { width: '100%', marginBottom: 16 },
     label: { fontSize: 14, color: '#4B5563', marginBottom: 6, alignSelf: 'flex-start' },
     input: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, backgroundColor: '#FFFFFF', width: '100%' },
+    passwordContainer: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 8, backgroundColor: '#FFFFFF' },
+    passwordInput: { flex: 1, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16 },
+    passwordToggle: { paddingHorizontal: 14, paddingVertical: 12 },
     
     // OTP
     otpContainer: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginBottom: 30 },
@@ -458,6 +646,16 @@ const styles = StyleSheet.create({
     dividerText: { marginHorizontal: 16, color: '#9CA3AF', fontSize: 14 },
     genericBtn: { backgroundColor: '#ECFDF5', paddingVertical: 14, borderRadius: 8, width: '100%', alignItems: 'center' },
     genericBtnText: { color: '#00A82D', fontSize: 14, fontWeight: '600' },
+
+    // Profile completion
+    completionContainer: { minHeight: 560, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
+    loadingIconContainer: { width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center', backgroundColor: '#ECFDF5', marginBottom: 28 },
+    successHalo: { width: 152, height: 152, borderRadius: 76, alignItems: 'center', justifyContent: 'center', backgroundColor: '#DCFCE7', marginBottom: 32 },
+    successCircle: { width: 112, height: 112, borderRadius: 56, alignItems: 'center', justifyContent: 'center', backgroundColor: '#00A82D', shadowColor: '#00A82D', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 18, elevation: 8 },
+    successContent: { width: '100%', alignItems: 'center' },
+    successTitle: { fontSize: 28, lineHeight: 34, fontWeight: 'bold', color: '#111827', textAlign: 'center', marginBottom: 12 },
+    successSubtitle: { fontSize: 15, lineHeight: 23, color: '#6B7280', textAlign: 'center', marginBottom: 32, paddingHorizontal: 8 },
+    loginButton: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#00A82D', borderRadius: 10, paddingVertical: 16 },
 
     // Bottom Bar
     bottomBar: { paddingHorizontal: 24, paddingVertical: 20, backgroundColor: 'white' },

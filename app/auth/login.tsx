@@ -27,7 +27,7 @@ export default function Login() {
                     <View style={styles.titleContainer}>
                         <Text style={styles.mainTitle}>Log in to your account</Text>
                         <View style={styles.subtitleRow}>
-                            <Text style={styles.subtitleText}>Don't have an account? </Text>
+                            <Text style={styles.subtitleText}>{"Don't have an account? "}</Text>
                             <TouchableOpacity onPress={() => router.push('/auth/signup')}>
                                 <Text style={styles.loginLink}>Sign up</Text>
                             </TouchableOpacity>
